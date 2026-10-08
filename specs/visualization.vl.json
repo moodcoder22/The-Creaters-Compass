@@ -1,0 +1,236 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "The Creator's Compass: Success vs. Sustainability",
+    "subtitle": "Analysing the tension between growth metrics and creator wellbeing — IE/EU Focus",
+    "fontSize": 16,
+    "subtitleFontSize": 12,
+    "anchor": "start",
+    "color": "#eef0f6",
+    "subtitleColor": "#7a8099"
+  },
+  "config": {
+    "background": "#0d0f14",
+    "view": { "stroke": "transparent" },
+    "axis": {
+      "labelColor": "#7a8099",
+      "titleColor": "#b0b8d4",
+      "gridColor": "#1e2235",
+      "tickColor": "#1e2235",
+      "labelFontSize": 11,
+      "titleFontSize": 12
+    },
+    "legend": {
+      "labelColor": "#7a8099",
+      "titleColor": "#b0b8d4",
+      "labelFontSize": 11,
+      "titleFontSize": 11
+    }
+  },
+  "data": {
+    "url": "data/processed/creator_compass_clean.csv"
+  },
+  "transform": [
+    { "filter": "datum.followers >= 1000" },
+    {
+      "calculate": "datum.posting_freq_weekly <= 3 ? '1–3/wk' : datum.posting_freq_weekly <= 6 ? '4–6/wk' : datum.posting_freq_weekly <= 10 ? '7–10/wk' : '11+/wk'",
+      "as": "freq_band"
+    }
+  ],
+  "vconcat": [
+    {
+      "hconcat": [
+        {
+          "title": "① Success Matrix — Engagement vs. Posting Frequency",
+          "width": 480,
+          "height": 320,
+          "mark": {
+            "type": "point",
+            "filled": true,
+            "stroke": "transparent",
+            "size": 55
+          },
+          "params": [
+            {
+              "name": "platform_brush",
+              "select": { "type": "interval", "encodings": ["x", "y"] }
+            }
+          ],
+          "encoding": {
+            "x": {
+              "field": "posting_freq_weekly",
+              "type": "quantitative",
+              "axis": { "title": "Posts Per Week" },
+              "scale": { "domain": [0, 15] }
+            },
+            "y": {
+              "field": "engagement_rate",
+              "type": "quantitative",
+              "axis": { "title": "Engagement Rate (%)" },
+              "scale": { "domain": [0, 16] }
+            },
+            "color": {
+              "field": "platform",
+              "type": "nominal",
+              "scale": {
+                "domain": ["TikTok", "YouTube", "Instagram", "Twitch"],
+                "range": ["#ff6b9d", "#ff6b47", "#c084fc", "#5b9dff"]
+              },
+              "legend": { "title": "Platform", "orient": "top-right" }
+            },
+            "size": {
+              "field": "followers_log",
+              "type": "quantitative",
+              "scale": { "domain": [3, 8], "range": [20, 300] },
+              "legend": { "title": "Followers (log₁₀)" }
+            },
+            "opacity": {
+              "field": "wellbeing_score",
+              "type": "quantitative",
+              "scale": { "domain": [1, 10], "range": [0.08, 0.95] },
+              "legend": { "title": "Wellbeing Score (1–10)" }
+            },
+            "tooltip": [
+              { "field": "creator_id",          "title": "Creator ID"       },
+              { "field": "platform",             "title": "Platform"         },
+              { "field": "niche",                "title": "Niche"            },
+              { "field": "posting_freq_weekly",  "title": "Posts/Week",  "format": ".1f" },
+              { "field": "engagement_rate",      "title": "Engagement %", "format": ".2f" },
+              { "field": "wellbeing_score",      "title": "Wellbeing",    "format": ".1f" },
+              { "field": "sustainability_score", "title": "Sustainability","format": ".2f" },
+              { "field": "monetization_tier",    "title": "Tier"             }
+            ]
+          }
+        },
+        {
+          "title": "② Niche Comparison — Mean Engagement by Content Type",
+          "width": 280,
+          "height": 320,
+          "mark": { "type": "bar", "cornerRadiusEnd": 4 },
+          "encoding": {
+            "y": {
+              "field": "niche",
+              "type": "nominal",
+              "sort": "-x",
+              "axis": { "title": "Content Niche" }
+            },
+            "x": {
+              "field": "engagement_rate",
+              "type": "quantitative",
+              "aggregate": "mean",
+              "axis": { "title": "Mean Engagement (%)", "format": ".1f" }
+            },
+            "color": {
+              "field": "niche",
+              "type": "nominal",
+              "scale": {
+                "domain": ["Gaming", "Education", "Lifestyle", "Tech", "Art", "Comedy"],
+                "range": ["#5b9dff", "#00e5c3", "#ff6b9d", "#ffb347", "#c084fc", "#ff6b47"]
+              },
+              "legend": null
+            },
+            "opacity": {
+              "condition": { "param": "platform_brush", "value": 1.0 },
+              "value": 0.2
+            },
+            "tooltip": [
+              { "field": "niche",           "title": "Niche"                                          },
+              { "field": "engagement_rate", "title": "Mean Engagement %", "aggregate": "mean", "format": ".2f" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "hconcat": [
+        {
+          "title": "③ Wellbeing Heatmap — Platform × Posting Frequency Band",
+          "width": 480,
+          "height": 200,
+          "mark": { "type": "rect", "cornerRadius": 3 },
+          "encoding": {
+            "x": {
+              "field": "freq_band",
+              "type": "ordinal",
+              "sort": ["1–3/wk", "4–6/wk", "7–10/wk", "11+/wk"],
+              "axis": { "title": "Posting Frequency Band" }
+            },
+            "y": {
+              "field": "platform",
+              "type": "nominal",
+              "axis": { "title": "Platform" }
+            },
+            "color": {
+              "field": "wellbeing_score",
+              "type": "quantitative",
+              "aggregate": "mean",
+              "scale": { "scheme": "redyellowgreen", "domain": [4, 9] },
+              "legend": { "title": "Mean Wellbeing", "gradientLength": 100 }
+            },
+            "tooltip": [
+              { "field": "platform",        "title": "Platform"                                              },
+              { "field": "freq_band",       "title": "Frequency Band"                                       },
+              { "field": "wellbeing_score", "title": "Mean Wellbeing", "aggregate": "mean", "format": ".2f" }
+            ]
+          }
+        },
+        {
+          "title": "④ Regional CSO Context — Earnings vs. Export Intensity",
+          "width": 280,
+          "height": 200,
+          "layer": [
+            {
+              "mark": { "type": "bar", "cornerRadiusTopLeft": 4, "cornerRadiusTopRight": 4 },
+              "encoding": {
+                "x": {
+                  "field": "region",
+                  "type": "nominal",
+                  "sort": ["IE-East", "IE-South", "EU-West", "EU-East", "US"],
+                  "axis": { "title": "Region", "labelAngle": -30 }
+                },
+                "y": {
+                  "field": "avg_creative_earnings_eur",
+                  "type": "quantitative",
+                  "aggregate": "mean",
+                  "axis": { "title": "Avg Earnings (€)", "format": ",d" }
+                },
+                "color": {
+                  "field": "region",
+                  "type": "nominal",
+                  "scale": {
+                    "domain": ["IE-East", "IE-South", "EU-West", "EU-East", "US"],
+                    "range": ["#00e5c3", "#5b9dff", "#c084fc", "#ff6b9d", "#ffb347"]
+                  },
+                  "legend": null
+                }
+              }
+            },
+            {
+              "mark": {
+                "type": "line",
+                "color": "#ffffff",
+                "strokeWidth": 2.5,
+                "point": { "color": "#ffffff", "size": 50 }
+              },
+              "encoding": {
+                "x": {
+                  "field": "region",
+                  "type": "nominal",
+                  "sort": ["IE-East", "IE-South", "EU-West", "EU-East", "US"]
+                },
+                "y": {
+                  "field": "digital_export_intensity",
+                  "type": "quantitative",
+                  "aggregate": "mean",
+                  "axis": { "title": "Export Intensity (0–1)", "orient": "right" },
+                  "scale": { "domain": [0, 1.1] }
+                }
+              }
+            }
+          ],
+          "resolve": { "scale": { "y": "independent" } }
+        }
+      ]
+    }
+  ]
+}
